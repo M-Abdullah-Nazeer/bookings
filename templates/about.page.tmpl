@@ -1,0 +1,32 @@
+{{template "base" .}}
+
+
+{{define "content"}}
+
+
+<div class="container">
+  <div class="row">
+    <div class="col">
+
+
+      <h1>This is About</h1>
+
+<p>this came frm template: {{index .StringMap "test"}}</p>
+
+<p>
+<!-- its part of template package and dosnt follow go syntax -->
+  {{if ne (index .StringMap "remote_ip") ""}}
+Yr ip address is {{index .StringMap "remote_ip"}}
+{{else}}
+visit home page <a href="/">Home</a> to set ip</a>
+{{end}}
+</p>
+    </div>
+
+  </div>
+
+</div>
+
+
+
+{{end}}
