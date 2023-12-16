@@ -1,0 +1,11 @@
+mode: set
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:22.13,24.16 2 0
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:24.16,26.3 1 0
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:27.2,33.16 4 0
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:33.16,35.3 1 0
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:38.18,55.16 10 1
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:55.16,58.3 2 0
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/main.go:60.2,69.12 6 1
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/middleware.go:10.45,20.2 3 1
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/middleware.go:24.50,27.2 1 1
+github.com/M-Abdullah-Nazeer/bookings/cmd/web/routes.go:12.49,37.2 18 1

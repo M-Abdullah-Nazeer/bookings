@@ -1,0 +1,66 @@
+{{template "base" .}}
+
+
+{{define "content"}}
+
+
+
+<div class="container mb-5">
+    <div class="row">
+        <div class="col">
+            <h1 class="mt-5">Make Reservation</h1>
+
+            {{$res :=index .Data "reservation"}}
+
+            <form action="" method="post" class="" novalidate>
+
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}"/>
+                <div class="row mb-3">
+                    <div class="col-sm-10">
+                        <label for="fname" class="col-sm-2 col-form-label">First Name</label>
+
+                        {{with .Form.Errors.Get "first_name"}}
+                        <label class="text-danger">{{.}}</label>
+                        {{end}}
+                        <input required type="text" value="{{$res.FirstName}}" class="form-control {{with .Form.Errors.Get "first_name"}} is-invalid {{end}}" name="first_name" id="first_name">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-10">
+                        <label for="lname" class="col-sm-2 col-form-label">Last Name</label>
+
+                        {{with .Form.Errors.Get "last_name"}}
+                        <label class="text-danger">{{.}}</label>
+                        {{end}}
+                        <input required type="text" value="{{$res.LastName}}" class="form-control {{with .Form.Errors.Get "last_name"}} is-invalid {{end}}" name="last_name" id="lname">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-10">
+                        <label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>
+
+                        {{with .Form.Errors.Get "email"}}
+                        <label class="text-danger">{{.}}</label>
+                        {{end}}
+                        <input required type="email" value="{{$res.Email}}" name="email" class="form-control {{with .Form.Errors.Get "email"}} is-invalid {{end}}" id="inputEmail3">
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-10">
+                        <label for="phoneno" class="col-sm-2 col-form-label">Phone</label>
+
+                        {{with .Form.Errors.Get "phone"}}
+                        <label class="text-danger">{{.}}</label>
+                        {{end}}
+                        <input  type="text" value="{{$res.Phone}}" name="phone" class="form-control {{with .Form.Errors.Get "phone"}} is-invalid {{end}}" id="phoneno">
+                    </div>
+                </div>
+                <input type="submit" class="btn btn-primary" value="Make Reservation">
+            </form>
+        </div>
+    </div>
+</div>
+
+
+
+{{end}}

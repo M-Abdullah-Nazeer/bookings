@@ -8,21 +8,28 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"github.com/M-Abdullah-Nazeer/LearningGO/pkg/config"
-	"github.com/M-Abdullah-Nazeer/LearningGO/pkg/models"
+	"github.com/M-Abdullah-Nazeer/bookings/internal/config"
+	"github.com/M-Abdullah-Nazeer/bookings/internal/models"
+	"github.com/justinas/nosurf"
 )
 
 var app *config.AppConfig
 var err error
 
-func AddDefaultData(td *models.TemplateData) *models.TemplateData {
+func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
+
+	td.Flash = app.Session.PopString(r.Context(), "flash")
+	td.Error = app.Session.PopString(r.Context(), "error")
+	td.Warning = app.Session.PopString(r.Context(), "warning")
+	td.CSRFToken = nosurf.Token(r)
+
 	return td
 }
 
 func NewTemplates(a *config.AppConfig) {
 	app = a
 }
-func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData) {
+func RenderTemplate(w http.ResponseWriter, r *http.Request, tmpl string, td *models.TemplateData) {
 
 	var tc map[string]*template.Template
 
@@ -42,7 +49,7 @@ func RenderTemplate(w http.ResponseWriter, tmpl string, td *models.TemplateData)
 	}
 
 	buf := new(bytes.Buffer)
-	td = AddDefaultData(td)
+	td = AddDefaultData(td, r)
 
 	_ = t.Execute(buf, td)
 
