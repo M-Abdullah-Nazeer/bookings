@@ -1,0 +1,19 @@
+mode: set
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/errors.go:6.51,9.2 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/errors.go:12.42,15.18 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/errors.go:15.18,17.3 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/errors.go:19.2,19.14 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:17.29,20.2 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:23.33,29.2 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:32.43,34.31 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:34.31,37.37 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:37.37,39.4 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:46.39,50.13 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:50.13,53.3 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:54.2,54.13 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:59.57,63.21 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:63.21,67.3 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:68.2,68.13 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:73.43,75.40 1 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:75.40,79.3 2 1
+github.com/M-Abdullah-Nazeer/bookings/internal/forms/forms.go:81.2,81.13 1 1

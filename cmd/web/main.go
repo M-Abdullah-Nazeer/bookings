@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/M-Abdullah-Nazeer/bookings/internal/config"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/handlers"
+	"github.com/M-Abdullah-Nazeer/bookings/internal/helpers"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/models"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/render"
 	"github.com/alexedwards/scs/v2"
 )
 
-const portNumber = ":80"
+const portNumber = ":8080"
 
 var app config.AppConfig
 var session *scs.SessionManager
@@ -24,7 +26,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Starting Application on #{portNumber}")
+	fmt.Println("Starting Application on port", portNumber)
+
 	srv := &http.Server{
 		Addr:    portNumber,
 		Handler: routes(&app),
@@ -41,6 +44,13 @@ func run() error {
 	gob.Register(models.Reservation{})
 
 	app.InProduction = false
+	// os.Stdout is terminal window, \t is tab space
+	InfoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.InfoLog = InfoLog
+
+	// log.Lshortfile will give info about error
+	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.ErrorLog = errorLog
 
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
@@ -65,6 +75,8 @@ func run() error {
 	handlers.NewHandlers(repo)
 
 	render.NewTemplates(&app)
+
+	helpers.NewHelpers(&app)
 
 	return nil
 }

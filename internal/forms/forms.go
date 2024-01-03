@@ -2,7 +2,6 @@ package forms
 
 import (
 	"fmt"
-	"net/http"
 	"net/url"
 	"strings"
 
@@ -44,9 +43,9 @@ func (f *Form) Required(fields ...string) {
 }
 
 // Has checks if form field is in post and not empty, incase it is required
-func (f *Form) Has(field string, r *http.Request) bool {
+func (f *Form) Has(field string) bool {
 
-	x := r.Form.Get(field)
+	x := f.Get(field)
 
 	if x == "" {
 		f.Errors.Add(field, "This field cannot be blank")
@@ -57,9 +56,9 @@ func (f *Form) Has(field string, r *http.Request) bool {
 }
 
 // MinLength checks for string min length
-func (f *Form) MinLength(field string, length int, r *http.Request) bool {
+func (f *Form) MinLength(field string, length int) bool {
 
-	x := r.Form.Get(field)
+	x := f.Get(field)
 
 	if len(x) < length {
 
@@ -71,11 +70,14 @@ func (f *Form) MinLength(field string, length int, r *http.Request) bool {
 }
 
 // IsEmail validates email address
-func (f *Form) IsEmail(field string) {
+func (f *Form) IsEmail(field string) bool {
 
 	if !govalidator.IsEmail(f.Get(field)) { //IsEmail is built-in func of govalidator
 
 		f.Errors.Add(field, "Invalid Email Address")
+		return false
 	}
+
+	return true
 
 }

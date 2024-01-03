@@ -9,6 +9,7 @@ import (
 
 	"github.com/M-Abdullah-Nazeer/bookings/internal/config"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/forms"
+	"github.com/M-Abdullah-Nazeer/bookings/internal/helpers"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/models"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/render"
 )
@@ -30,9 +31,6 @@ func NewHandlers(r *Repository) {
 }
 
 func (m *Repository) Home(w http.ResponseWriter, r *http.Request) {
-
-	remoteIP := r.RemoteAddr
-	m.App.Session.Put(r.Context(), "remote_ip", remoteIP)
 
 	render.RenderTemplate(w, r, "home.page.tmpl", &models.TemplateData{})
 }
@@ -69,7 +67,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 
 	if err != nil {
-		log.Println("Error Parsing Form")
+		helpers.ServerError(w, err)
 		return
 	}
 
@@ -83,7 +81,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	form := forms.New(r.PostForm)
 
 	// form.Has("first_name", r)
-	form.MinLength("first_name", 4, r)
+	form.MinLength("first_name", 4)
 	form.Required("first_name", "last_name", "email", "phone")
 	form.IsEmail("email")
 
@@ -112,6 +110,8 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation) //session doesnot know type variable it is saving so typecasting
 
 	if !ok {
+
+		m.App.ErrorLog.Println("Can't get error from session")
 		log.Println("cant get items from session")
 		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
@@ -168,7 +168,7 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 	out, err := json.MarshalIndent(respo, "", "     ")
 
 	if err != nil {
-		log.Println(err)
+		helpers.ServerError(w, err)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)

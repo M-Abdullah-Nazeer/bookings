@@ -19,7 +19,7 @@ func TestNoSurf(t *testing.T) {
 
 	default:
 		// %T is placeholder for type
-		t.Error(fmt.Sprintf("The type returned by NoSurf is not handler instead it is %T", dt))
+		t.Errorf(fmt.Sprintf("The type returned by NoSurf is not handler instead it is %T", dt))
 	}
 }
 func TestSessionLoad(t *testing.T) {
@@ -35,6 +35,6 @@ func TestSessionLoad(t *testing.T) {
 
 	default:
 		// %T is placeholder for type
-		t.Error(fmt.Sprintf("The type returned by NoSurf is not handler instead it is %T", dt))
+		t.Errorf(fmt.Sprintf("The type returned by NoSurf is not handler instead it is %T", dt))
 	}
 }
