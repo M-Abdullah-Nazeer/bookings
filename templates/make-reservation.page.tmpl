@@ -4,17 +4,30 @@
 {{define "content"}}
 
 
+{{$res :=index .Data "reservation"}}
 
 <div class="container mb-5">
     <div class="row">
         <div class="col">
             <h1 class="mt-5">Make Reservation</h1>
 
-            {{$res :=index .Data "reservation"}}
+<p><strong>Reservation Details</strong><br>
 
-            <form action="" method="post" class="" novalidate>
+Room: {{$res.Room.RoomName}}<br>
+Arrival: {{index .StringMap "start_date"}}<br>
+Departure: {{index .StringMap "end_date"}}
+
+</p>
+
+            
+
+            <form action="/make-reservation" method="post" class="" novalidate>
 
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}"/>
+<input type="hidden" name="start_date" value="{{index .StringMap "start_date"}}">
+<input type="hidden" name="end_date" value="{{index .StringMap "end_date"}}">
+<input type="hidden" name="room_id" value="{{$res.RoomID}}">
+
                 <div class="row mb-3">
                     <div class="col-sm-10">
                         <label for="fname" class="col-sm-2 col-form-label">First Name</label>
@@ -55,6 +68,9 @@
                         <input  type="text" value="{{$res.Phone}}" name="phone" class="form-control {{with .Form.Errors.Get "phone"}} is-invalid {{end}}" id="phoneno">
                     </div>
                 </div>
+
+    
+
                 <input type="submit" class="btn btn-primary" value="Make Reservation">
             </form>
         </div>

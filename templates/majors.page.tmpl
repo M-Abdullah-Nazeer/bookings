@@ -91,6 +91,7 @@
                     format: "yyyy-mm-dd",
                     showOnFocus: true,
                     orientation: "top",
+                    minDate: new Date(),
                 })
             },
             didOpen: () => {
@@ -105,6 +106,7 @@
                 let form = document.getElementById("check-availability-form")
                 let formData = new FormData(form);
                 formData.append("csrf_token","{{.CSRFToken}}");
+                formData.append("room_id","1");
 
         //fetch is built in function to fetch json, it gets json by response.json() which is nicely parsed in data, we can perform js on data
 
@@ -114,9 +116,27 @@
         })
             .then(response => response.json())
             .then(data => {
-                console.log(data)
-                console.log(data.ok)
-                console.log(data.message)
+                if(data.ok){
+                    
+                    attention.custom({
+                        icon:"success",
+                        showConfirmButton: false,
+                        msg: '<p>Room is Available!</p>'
+                        + '<p><a href="/book-room?id='
+                        + data.room_id
+                        + '&s='
+                        + data.start_date
+                        + '&e='
+                        + data.end_date
+                        + '"class="btn btn-primary">' 
+                        + 'Book now!</a></p>',
+                    })
+                }
+                else{ 
+                    attention.error({
+                        msg:"No availability",
+                    })
+                }
             })
     }
 

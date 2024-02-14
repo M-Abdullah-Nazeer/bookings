@@ -43,7 +43,7 @@ func TestRenderTemplate(t *testing.T) {
 	// Response writer created (check ssetup_tes for mywriter details)
 	var ww myWriter
 
-	err = RenderTemplate(&ww, r, "home.page.tmpl", &models.TemplateData{})
+	err = Template(&ww, r, "home.page.tmpl", &models.TemplateData{})
 	if err != nil {
 		t.Error("error writing to template")
 	}
@@ -69,7 +69,7 @@ func getSession() (*http.Request, error) {
 
 func TestNewTemplates(t *testing.T) {
 
-	NewTemplates(app)
+	NewRenderer(app)
 }
 
 func TestCreateTemplateCache(t *testing.T) {

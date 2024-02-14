@@ -21,10 +21,10 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: reservations; Type: TABLE; Schema: public; Owner: postgres
+-- Name: reservation; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.reservations (
+CREATE TABLE public.reservation (
     id integer NOT NULL,
     first_name character varying(255) DEFAULT ''::character varying NOT NULL,
     last_name character varying(255) DEFAULT ''::character varying NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE public.reservations (
 );
 
 
-ALTER TABLE public.reservations OWNER TO postgres;
+ALTER TABLE public.reservation OWNER TO postgres;
 
 --
 -- Name: reservations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -59,7 +59,7 @@ ALTER TABLE public.reservations_id_seq OWNER TO postgres;
 -- Name: reservations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.reservations_id_seq OWNED BY public.reservations.id;
+ALTER SEQUENCE public.reservations_id_seq OWNED BY public.reservation.id;
 
 
 --
@@ -99,6 +99,20 @@ ALTER SEQUENCE public.restrictions_id_seq OWNED BY public.restrictions.id;
 
 
 --
+-- Name: room; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.room (
+    id integer NOT NULL,
+    room_name character varying(255) DEFAULT ''::character varying NOT NULL,
+    created_at timestamp without time zone NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+
+ALTER TABLE public.room OWNER TO postgres;
+
+--
 -- Name: room_restrictions; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -107,7 +121,7 @@ CREATE TABLE public.room_restrictions (
     start_date date NOT NULL,
     end_date date NOT NULL,
     room_id integer NOT NULL,
-    reservation_id integer NOT NULL,
+    reservation_id integer,
     restriction_id integer NOT NULL,
     created_at timestamp without time zone NOT NULL,
     updated_at timestamp without time zone NOT NULL
@@ -139,20 +153,6 @@ ALTER SEQUENCE public.room_restrictions_id_seq OWNED BY public.room_restrictions
 
 
 --
--- Name: rooms; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.rooms (
-    id integer NOT NULL,
-    room_name character varying(255) DEFAULT ''::character varying NOT NULL,
-    created_at timestamp without time zone NOT NULL,
-    updated_at timestamp without time zone NOT NULL
-);
-
-
-ALTER TABLE public.rooms OWNER TO postgres;
-
---
 -- Name: rooms_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -171,7 +171,7 @@ ALTER TABLE public.rooms_id_seq OWNER TO postgres;
 -- Name: rooms_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.rooms_id_seq OWNED BY public.rooms.id;
+ALTER SEQUENCE public.rooms_id_seq OWNED BY public.room.id;
 
 
 --
@@ -226,10 +226,10 @@ ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: reservations id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: reservation id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.reservations ALTER COLUMN id SET DEFAULT nextval('public.reservations_id_seq'::regclass);
+ALTER TABLE ONLY public.reservation ALTER COLUMN id SET DEFAULT nextval('public.reservations_id_seq'::regclass);
 
 
 --
@@ -240,17 +240,17 @@ ALTER TABLE ONLY public.restrictions ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
+-- Name: room id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.room ALTER COLUMN id SET DEFAULT nextval('public.rooms_id_seq'::regclass);
+
+
+--
 -- Name: room_restrictions id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.room_restrictions ALTER COLUMN id SET DEFAULT nextval('public.room_restrictions_id_seq'::regclass);
-
-
---
--- Name: rooms id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.rooms ALTER COLUMN id SET DEFAULT nextval('public.rooms_id_seq'::regclass);
 
 
 --
@@ -261,10 +261,10 @@ ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_
 
 
 --
--- Name: reservations reservations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reservation reservations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.reservations
+ALTER TABLE ONLY public.reservation
     ADD CONSTRAINT reservations_pkey PRIMARY KEY (id);
 
 
@@ -285,10 +285,10 @@ ALTER TABLE ONLY public.room_restrictions
 
 
 --
--- Name: rooms rooms_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: room rooms_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.rooms
+ALTER TABLE ONLY public.room
     ADD CONSTRAINT rooms_pkey PRIMARY KEY (id);
 
 
@@ -344,11 +344,11 @@ CREATE UNIQUE INDEX users_email_idx ON public.users USING btree (email);
 
 
 --
--- Name: reservations reservations_rooms_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reservation reservations_rooms_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.reservations
-    ADD CONSTRAINT reservations_rooms_id_fk FOREIGN KEY (room_id) REFERENCES public.rooms(id) ON UPDATE CASCADE ON DELETE CASCADE;
+ALTER TABLE ONLY public.reservation
+    ADD CONSTRAINT reservations_rooms_id_fk FOREIGN KEY (room_id) REFERENCES public.room(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -356,7 +356,7 @@ ALTER TABLE ONLY public.reservations
 --
 
 ALTER TABLE ONLY public.room_restrictions
-    ADD CONSTRAINT room_restrictions_reservations_id_fk FOREIGN KEY (reservation_id) REFERENCES public.reservations(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT room_restrictions_reservations_id_fk FOREIGN KEY (reservation_id) REFERENCES public.reservation(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
@@ -364,7 +364,7 @@ ALTER TABLE ONLY public.room_restrictions
 --
 
 ALTER TABLE ONLY public.room_restrictions
-    ADD CONSTRAINT room_restrictions_rooms_id_fk FOREIGN KEY (room_id) REFERENCES public.rooms(id) ON UPDATE CASCADE ON DELETE CASCADE;
+    ADD CONSTRAINT room_restrictions_rooms_id_fk FOREIGN KEY (room_id) REFERENCES public.room(id) ON UPDATE CASCADE ON DELETE CASCADE;
 
 
 --
