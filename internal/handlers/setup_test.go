@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"testing"
 	"text/template"
 	"time"
 
@@ -27,8 +28,7 @@ var functions = template.FuncMap{}
 var app config.AppConfig
 var session *scs.SessionManager
 
-func getRoutes() http.Handler {
-
+func TestMain(m *testing.M) {
 	// what am i going to store in the session
 	gob.Register(models.Reservation{})
 
@@ -50,6 +50,13 @@ func getRoutes() http.Handler {
 
 	app.Session = session
 
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
+
+	defer close(app.MailChan)
+
+	listenForMail()
+
 	tc, err := CreateTestTemplateCache()
 
 	if err != nil {
@@ -61,10 +68,26 @@ func getRoutes() http.Handler {
 
 	app.UseCache = true
 
-	// repo := NewRepo(&app)
-	// NewHandlers(repo)
+	repo := NewTestRepo(&app)
+	NewHandlers(repo)
 
 	render.NewRenderer(&app)
+
+	os.Exit(m.Run())
+}
+
+func listenForMail() {
+
+	go func() {
+
+		for {
+			_ = <-app.MailChan
+
+		}
+	}()
+}
+
+func getRoutes() http.Handler {
 
 	mux := chi.NewRouter()
 	mux.Use(middleware.Recoverer)

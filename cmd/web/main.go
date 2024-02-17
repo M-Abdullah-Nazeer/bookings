@@ -28,8 +28,13 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	// close db
 	defer db.SQL.Close()
+
+	// close mail channel
+	defer close(app.MailChan)
+
+	listenForMail()
 
 	fmt.Println("Starting Application on port", portNumber)
 
@@ -50,6 +55,10 @@ func run() (*driver.DB, error) {
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+
+	// making mail channel
+	mailChan := make(chan models.MailData)
+	app.MailChan = mailChan
 
 	app.InProduction = false
 	// os.Stdout is terminal window, \t is tab space
@@ -83,6 +92,7 @@ func run() (*driver.DB, error) {
 	tc, err := render.CreateTemplateCache()
 
 	if err != nil {
+		log.Println(err)
 		log.Fatal("can't create temp cache")
 		return nil, err
 	}

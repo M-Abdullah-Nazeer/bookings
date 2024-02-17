@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"encoding/json"
-	"errors"
-
+	"fmt"
 	"log"
 	"strconv"
+	"strings"
 	"time"
 
 	"net/http"
@@ -13,14 +13,11 @@ import (
 	"github.com/M-Abdullah-Nazeer/bookings/internal/config"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/driver"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/forms"
-	"github.com/M-Abdullah-Nazeer/bookings/internal/helpers"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/models"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/render"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/repository"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/repository/dbrepo"
-
 	// "github.com/go-chi/chi"
-	"github.com/go-chi/chi/v5"
 )
 
 var Repo *Repository
@@ -34,6 +31,13 @@ func NewRepo(a *config.AppConfig, db *driver.DB) *Repository {
 	return &Repository{
 		App: a,
 		DB:  dbrepo.NewPostgresRepo(db.SQL, a),
+	}
+}
+
+func NewTestRepo(a *config.AppConfig) *Repository {
+	return &Repository{
+		App: a,
+		DB:  dbrepo.NewTestingRepo(a),
 	}
 }
 
@@ -68,13 +72,15 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 
-		helpers.ServerError(w, errors.New("cannot get reservation from sessions"))
+		m.App.Session.Put(r.Context(), "error", "can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 
 	room, err := m.DB.GetRoomByID(res.RoomID)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't get room details from db")
+		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 		return
 	}
 	//saving room name
@@ -104,16 +110,20 @@ func (m *Repository) Reservation(w http.ResponseWriter, r *http.Request) {
 // PostReservation handles the posting of a reservation form
 func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
-	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
-	if !ok {
-		helpers.ServerError(w, errors.New("can't get from session"))
-		return
-	}
-
 	err := r.ParseForm()
 
 	if err != nil {
-		helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't parse form")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	reservation, ok := m.App.Session.Get(r.Context(), "reservation").(models.Reservation)
+	if !ok {
+
+		m.App.Session.Put(r.Context(), "error", "can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -125,7 +135,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 	form := forms.New(r.PostForm)
 
 	// form.Has("first_name", r)
-	form.MinLength("first_name", 4)
+	form.MinLength("first_name", 3)
 	form.Required("first_name", "last_name", "email", "phone")
 	form.IsEmail("email")
 
@@ -133,6 +143,7 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 		data := make(map[string]interface{})
 		data["reservation"] = reservation
 
+		http.Error(w, "Form is not valid", http.StatusSeeOther)
 		//re render the page
 		render.Template(w, r, "make-reservation.page.tmpl", &models.TemplateData{
 			Form: form,
@@ -143,7 +154,9 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	reservationID, err := m.DB.InsertReservation(reservation)
 	if err != nil {
-		helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't insert reservation to db")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -160,9 +173,33 @@ func (m *Repository) PostReservation(w http.ResponseWriter, r *http.Request) {
 
 	err = m.DB.InsertRoomRestriction(restriction)
 	if err != nil {
-		helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't insert room restrictions to db")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+
+	// send email notification to guest
+	htmlMsg := fmt.Sprintf(`<h1>Hello %s </h1>`, reservation.FirstName)
+	msg := models.MailData{
+		To:       reservation.Email,
+		From:     "me@google.com",
+		Subject:  "Reservation Confirmation",
+		Content:  htmlMsg,
+		Template: "reservation-email-to-guest.html",
+	}
+	m.App.MailChan <- msg
+
+	// send email notification to property owner
+	htmlMsg = fmt.Sprintf(`<h1>Your Room %s has been booked by %s for %s to %s </h1>`, reservation.Room.RoomName, reservation.FirstName, reservation.StartDate, reservation.EndDate)
+	msg = models.MailData{
+		To:      "me@google.com",
+		From:    "me@google.com",
+		Subject: "Reservation Confirmation",
+		Content: htmlMsg,
+	}
+	m.App.MailChan <- msg
+
 	// Storing form object values in session to send them to reservation-summary template
 	m.App.Session.Put(r.Context(), "reservation", reservation)
 
@@ -178,8 +215,6 @@ func (m *Repository) ReservationSummary(w http.ResponseWriter, r *http.Request) 
 
 	if !ok {
 
-		m.App.ErrorLog.Println("Can't get error from session")
-		log.Println("cant get items from session")
 		m.App.Session.Put(r.Context(), "error", "Can't get reservation from session")
 		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
 	}
@@ -224,6 +259,12 @@ func (m *Repository) Availability(w http.ResponseWriter, r *http.Request) {
 
 // finds room avilability from db and redirects to choose-room page if available
 func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		m.App.Session.Put(r.Context(), "error", "can't parse form!")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
 
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
@@ -232,19 +273,23 @@ func (m *Repository) PostAvailability(w http.ResponseWriter, r *http.Request) {
 
 	start_date, err := time.Parse(layout, start)
 	if err != nil {
-		helpers.ServerError(w, err)
+
+		m.App.Session.Put(r.Context(), "error", "can't parse start date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	end_date, err := time.Parse(layout, end)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse end date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	rooms, err := m.DB.SearchAvailabilityForAllRooms(start_date, end_date)
 
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't get all rooms from db")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -281,6 +326,22 @@ type jsonResponse struct {
 // finds room avilability from db by json request without refreshing page from room page
 func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
+	err := r.ParseForm()
+	if err != nil {
+
+		// can't parse form, so return appropriate json
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal Server Error",
+		}
+
+		// write json back to browser
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
+		return
+	}
+
 	start := r.Form.Get("start")
 	end := r.Form.Get("end")
 
@@ -288,24 +349,39 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 	start_date, err := time.Parse(layout, start)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse start date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	end_date, err := time.Parse(layout, end)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse end date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
 	roomID, err := strconv.Atoi(r.Form.Get("room_id"))
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse room id")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	available, err := m.DB.SearchAvailabilityByRoomID(start_date, end_date, roomID)
 
 	if err != nil {
-		helpers.ServerError(w, err)
+		// m.App.Session.Put(r.Context(), "error", "can't get room availability from db")
+		// http.Redirect(w, r, "/", http.StatusSeeOther)
+		// return
+
+		resp := jsonResponse{
+			OK:      false,
+			Message: "Internal Server Error",
+		}
+
+		// write json back to browser
+		out, _ := json.MarshalIndent(resp, "", "     ")
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(out)
 		return
 	}
 
@@ -316,12 +392,13 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 		EndDate:   end,
 		RoomID:    strconv.Itoa(roomID),
 	}
-	out, err := json.MarshalIndent(respo, "", "     ")
+	out, _ := json.MarshalIndent(respo, "", "     ")
 
-	if err != nil {
-		helpers.ServerError(w, err)
-		return
-	}
+	// if err != nil {
+	// 	m.App.Session.Put(r.Context(), "error", "can't parse json")
+	// 	http.Redirect(w, r, "/", http.StatusSeeOther)
+	// 	return
+	// }
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 
@@ -329,10 +406,14 @@ func (m *Repository) AvailabilityJSON(w http.ResponseWriter, r *http.Request) {
 
 // displays list of available rooms
 func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
-	roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	// roomID, err := strconv.Atoi(chi.URLParam(r, "id"))
+
+	exploded := strings.Split(r.RequestURI, "/")
+	roomID, err := strconv.Atoi(exploded[2])
 	if err != nil {
 
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't get room id from url")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -340,7 +421,8 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 
 	if !ok {
 
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't get reservation from session")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -356,9 +438,11 @@ func (m *Repository) ChooseRoom(w http.ResponseWriter, r *http.Request) {
 func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 
 	roomID, err := strconv.Atoi(r.URL.Query().Get("id"))
+
 	if err != nil {
 
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse room id")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	sd := r.URL.Query().Get("s")
@@ -368,12 +452,14 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 
 	start_date, err := time.Parse(layout, sd)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse start date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 	end_date, err := time.Parse(layout, ed)
 	if err != nil {
-		helpers.ServerError(w, err)
+		m.App.Session.Put(r.Context(), "error", "can't parse end date")
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
 
@@ -386,4 +472,49 @@ func (m *Repository) BookRoom(w http.ResponseWriter, r *http.Request) {
 	m.App.Session.Put(r.Context(), "reservation", res)
 
 	http.Redirect(w, r, "/make-reservation", http.StatusSeeOther)
+}
+
+func (m *Repository) Login(w http.ResponseWriter, r *http.Request) {
+
+	render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+		Form: forms.New(nil),
+	})
+}
+
+// logging the user in
+func (m *Repository) PostLogin(w http.ResponseWriter, r *http.Request) {
+
+	// prevents session fixation attack, every session has a certain token associated with it so it is good practice to renew token while login or logout
+
+	_ = m.App.Session.RenewToken(r.Context())
+
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+	}
+
+	email := r.Form.Get("email")
+	password := r.Form.Get("password")
+
+	form := forms.New(r.PostForm)
+
+	form.Required("email", "password")
+	form.IsEmail("email")
+
+	if !form.Valid() {
+		render.Template(w, r, "login.page.tmpl", &models.TemplateData{
+			Form: form,
+		})
+	}
+	id, _, err := m.DB.Authenticate(email, password)
+	if err != nil {
+		log.Println(err)
+		m.App.Session.Put(r.Context(), "error", "Invalid Credentials")
+		http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+		return
+	}
+	log.Println("worked")
+	m.App.Session.Put(r.Context(), "user_id", id)
+	m.App.Session.Put(r.Context(), "flash", "Logged in successfully")
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
