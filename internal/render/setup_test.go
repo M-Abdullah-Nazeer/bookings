@@ -20,6 +20,10 @@ func TestMain(m *testing.M) {
 
 	// what am i going to store in the session
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{})
 
 	testApp.InProduction = false
 	// os.Stdout is terminal window, \t is tab space

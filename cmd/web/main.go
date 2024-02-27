@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/gob"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -18,7 +19,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 )
 
-const portNumber = ":8080"
+const portNumber = ":80"
 
 var app config.AppConfig
 var session *scs.SessionManager
@@ -55,12 +56,30 @@ func run() (*driver.DB, error) {
 	gob.Register(models.User{})
 	gob.Register(models.Room{})
 	gob.Register(models.Restriction{})
+	gob.Register(map[string]int{})
+
+	// read flags
+	inProduction := flag.Bool("production", true, "Application is in Production")
+	useCache := flag.Bool("cache", true, "Use template cache")
+	dbHost := flag.String("dbhost", "localhost", "Database host")
+	dbName := flag.String("dbname", "", "Database name")
+	dbUser := flag.String("dbuser", "", "Database user")
+	dbPass := flag.String("dbpass", "", "Database password")
+	dbPort := flag.String("dbport", "5432", "Database port")
+	dbSSL := flag.String("dbssl", "disable", "Database ssl settnig (disable, prefer, require)")
+
+	flag.Parse()
+
+	if *dbName == "" || *dbUser == "" {
+		fmt.Println("Missng required flags")
+		os.Exit(1)
+	}
 
 	// making mail channel
 	mailChan := make(chan models.MailData)
 	app.MailChan = mailChan
 
-	app.InProduction = false
+	app.InProduction = *inProduction
 	// os.Stdout is terminal window, \t is tab space
 	InfoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	app.InfoLog = InfoLog
@@ -80,9 +99,14 @@ func run() (*driver.DB, error) {
 	// connect to db
 
 	log.Println("Connecting to db....")
+
+	connectionString := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", *dbHost, *dbPort, *dbName, *dbUser, *dbPass, *dbSSL)
+
+	db, error := driver.ConnectSQL(connectionString)
+
 	// db, error := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=admin")
-	db, error := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=admin")
 	if error != nil {
+
 		log.Fatal("can't connect to db, dying.....")
 		return nil, error
 	}
@@ -99,7 +123,7 @@ func run() (*driver.DB, error) {
 
 	app.TemplateCache = tc
 
-	app.UseCache = false
+	app.UseCache = *useCache
 
 	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)

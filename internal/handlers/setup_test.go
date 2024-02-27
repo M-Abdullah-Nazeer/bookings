@@ -23,7 +23,13 @@ import (
 var pathToTemplate = "./../../templates"
 
 // holds funcitions that we make available to golang templates
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+
+	"humanDate":  render.HumanDate,
+	"formatDate": render.FormatDate,
+	"iterate":    render.Iterate,
+	"add":        render.Add,
+}
 
 var app config.AppConfig
 var session *scs.SessionManager
@@ -107,6 +113,25 @@ func getRoutes() http.Handler {
 	mux.Post("/search-availability-json", Repo.AvailabilityJSON)
 
 	mux.Get("/contact", Repo.Contact)
+
+	mux.Get("/choose-room/{id}", Repo.ChooseRoom)
+	mux.Get("/book-room", Repo.BookRoom)
+
+	mux.Get("/user/login", Repo.Login)
+	mux.Post("/user/login", Repo.PostLogin)
+
+	mux.Get("/user/logout", Repo.Logout)
+
+	mux.Get("/admin/dashboard", Repo.AdminDashboard)
+	mux.Get("/admin/reservations-new", Repo.AdminNewReservations)
+	mux.Get("/admin/reservations-all", Repo.AdminAllReservations)
+	mux.Get("/admin/reservations-calendar", Repo.AdminReservationsCalendar)
+	mux.Post("/admin/reservations-calendar", Repo.AdminPostReservationsCalendar)
+	mux.Get("/admin/process-reservation/{src}/{id}/process", Repo.ProcessReservation)
+	mux.Get("/admin/delete-reservation/{src}/{id}/delete", Repo.DeleteReservation)
+
+	mux.Get("/admin/reservations/{src}/{id}/show", Repo.AdminShowReservations)
+	mux.Post("/admin/reservations/{src}/{id}", Repo.AdminPostShowReservations)
 
 	fileServer := http.FileServer(http.Dir("./static/"))
 	mux.Handle("/static/*", http.StripPrefix("/static", fileServer))

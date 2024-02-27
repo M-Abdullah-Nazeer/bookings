@@ -33,6 +33,7 @@ func sendMsg(m models.MailData) {
 
 	client, err := server.Connect()
 	if err != nil {
+
 		app.ErrorLog.Println(err)
 	}
 

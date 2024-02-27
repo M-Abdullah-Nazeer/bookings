@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"text/template"
+	"time"
 
 	"github.com/M-Abdullah-Nazeer/bookings/internal/config"
 	"github.com/M-Abdullah-Nazeer/bookings/internal/models"
@@ -15,10 +16,36 @@ import (
 )
 
 // holds funcitions that we make available to golang templates
-var functions = template.FuncMap{}
+var functions = template.FuncMap{
+
+	"humanDate":  HumanDate,
+	"formatDate": FormatDate,
+	"iterate":    Iterate,
+	"add":        Add,
+}
+
+func HumanDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+func Add(a, b int) int {
+	return a + b
+}
+func Iterate(count int) []int {
+	var i int
+	var items []int
+
+	for i = 0; i < count; i++ {
+		items = append(items, i)
+	}
+	return items
+}
+
+func FormatDate(t time.Time, format string) string {
+	return t.Format(format)
+}
 
 var pathToTemplate = "./templates"
-
 var app *config.AppConfig
 var err error
 
@@ -28,6 +55,11 @@ func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateDa
 	td.Error = app.Session.PopString(r.Context(), "error")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.CSRFToken = nosurf.Token(r)
+
+	if app.Session.Exists(r.Context(), "user_id") {
+		// 1 means login 0 means logout, 0 is default value of int
+		td.IsAuthenticated = 1
+	}
 
 	return td
 }

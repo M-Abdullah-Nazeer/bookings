@@ -1,0 +1,1 @@
+drop_coulmn("reservation", "processed")

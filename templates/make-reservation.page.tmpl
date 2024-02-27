@@ -11,14 +11,18 @@
         <div class="col">
             <h1 class="mt-5">Make Reservation</h1>
 
-<p><strong>Reservation Details</strong><br>
+          
 
-Room: {{$res.Room.RoomName}}<br>
-Arrival: {{index .StringMap "start_date"}}<br>
-Departure: {{index .StringMap "end_date"}}
+<p><strong>Reservation Details</strong><br></p>
+<hr>
+<p>
+
+    <strong>Room: {{$res.Room.RoomName}}</strong><br>
+<strong>Arrival: {{humanDate $res.StartDate}}</strong> <br>
+<strong>Departure: {{humanDate $res.EndDate}}</strong><br>
 
 </p>
-
+<hr>
             
 
             <form action="/make-reservation" method="post" class="" novalidate>

@@ -1,0 +1,134 @@
+{{template "admin" .}}
+
+    
+{{define "page-title"}}
+{{$res := index .Data "reservation"}}
+{{$res.FirstName}} {{$res.LastName}} Reservation
+{{end}}
+
+{{define "content"}}
+    <div class="col-md-12">
+        
+        {{$res := index .Data "reservation"}}
+        {{$src := index .StringMap "src"}}
+   
+
+<p>
+    <strong>Arrival: {{humanDate $res.StartDate}}</strong> <br>
+    <strong>Departure: {{humanDate $res.EndDate}}</strong><br>
+    <strong>Room: {{$res.Room.RoomName}}</strong><br>
+</p>
+
+
+     <form action="/admin/reservations/{{$src}}/{{$res.ID}}" method="post" class="" novalidate>
+
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}"/>
+
+        <input type="hidden" name="year" value="{{index .StringMap "year"}}"/>
+        <input type="hidden" name="month" value="{{index .StringMap "month"}}"/>
+
+        <div class="row mb-3">
+            <div class="col-sm-10">
+                <label for="fname" class="col-sm-2 col-form-label">First Name</label>
+
+                {{with .Form.Errors.Get "first_name"}}
+                <label class="text-danger">{{.}}</label>
+                {{end}}
+                <input required type="text" value="{{$res.FirstName}}" class="form-control {{with .Form.Errors.Get "first_name"}} is-invalid {{end}}" name="first_name" id="first_name">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-sm-10">
+                <label for="lname" class="col-sm-2 col-form-label">Last Name</label>
+
+                {{with .Form.Errors.Get "last_name"}}
+                <label class="text-danger">{{.}}</label>
+                {{end}}
+                <input required type="text" value="{{$res.LastName}}" class="form-control {{with .Form.Errors.Get "last_name"}} is-invalid {{end}}" name="last_name" id="lname">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-sm-10">
+                <label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>
+
+                {{with .Form.Errors.Get "email"}}
+                <label class="text-danger">{{.}}</label>
+                {{end}}
+                <input required type="email" value="{{$res.Email}}" name="email" class="form-control {{with .Form.Errors.Get "email"}} is-invalid {{end}}" id="inputEmail3">
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col-sm-10">
+                <label for="phoneno" class="col-sm-2 col-form-label">Phone</label>
+
+                {{with .Form.Errors.Get "phone"}}
+                <label class="text-danger">{{.}}</label>
+                {{end}}
+                <input  type="text" value="{{$res.Phone}}" name="phone" class="form-control {{with .Form.Errors.Get "phone"}} is-invalid {{end}}" id="phoneno">
+            </div>
+        </div>
+
+<hr>
+        <div class="float-start">
+        <input type="submit" class="btn btn-primary" value="Save">
+        
+{{if eq $src "cal"}}
+<a href="#!" onclick="window.history.go(-1)" class="btn btn-warning">Cancel</a>
+{{else}}
+        <a href="/admin/reservations-{{$src}}" class="btn btn-warning" >Cancel</a>
+{{end}}
+
+{{if eq $res.Processed 0}}
+        <a href="#!" class="btn btn-info" onclick="processRes({{$res.ID}})">Mark as Processed</a>
+{{end}}
+
+ </div>
+
+     <div class="float-end"> 
+        <a href="#!" class="btn btn-danger" onclick="deleteRes({{$res.ID}})">Delete</a>
+    </div>
+
+    <div class="clearfix"></div>
+
+    </form>
+
+    </div>
+{{end}}
+
+{{define "js"}}
+
+{{$src := index .StringMap "src"}}
+<script>
+
+function processRes(id){
+    attention.custom({
+        icon: "warning",
+        msg: "Are you sure?", 
+        callback: function(result){
+            if (result!== false){
+            window.location.href = "/admin/process-reservation/{{$src}}/"
+            +id 
+            +"/process?y={{index .StringMap "year"}}&m={{index .StringMap "month"}}";
+            }
+        }
+
+    })
+}
+function deleteRes(id){
+    attention.custom({
+        icon: "warning",
+        msg: "Are you sure?", 
+        callback: function(result){
+            if (result!== false){
+            window.location.href = "/admin/delete-reservation/{{$src}}/"
+             +id + "/delete?y={{index .StringMap "year"}}&m={{index .StringMap "month"}}";
+            }
+        }
+
+    })
+}
+
+</script>
+
+
+{{end}}
